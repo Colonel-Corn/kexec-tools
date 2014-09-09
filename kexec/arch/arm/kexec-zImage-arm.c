@@ -631,6 +631,30 @@ int dtb_add_htc_m8_specific(void *dtb_buf)
 
 	return 0;
 }
+
+char *dtb_get_model()
+{
+	FILE *f;
+	char modelpath[50];
+	char *model = (char*)malloc(50);
+	int cnt;
+
+	sprintf(modelpath, "/proc/device-tree/model");
+
+	f = fopen(modelpath, "r");
+	if(!f)
+	{
+		fprintf(stderr, "DTB: Failed to open %s!\n", modelpath);
+		return 0;
+	}
+
+	cnt = fread(model, 1, 50, f);
+	model[cnt] = 0;
+
+	fclose(f);
+
+	return model;
+}
 //end htc m8
 
 int zImage_arm_load(int argc, char **argv, const char *buf, off_t len,
@@ -653,7 +677,7 @@ int zImage_arm_load(int argc, char **argv, const char *buf, off_t len,
 	char *dtb_buf;
 	off_t dtb_length;
 	off_t dtb_offset;
-	struct arm_mach *mach;
+	char *dtb_model;
 
 	/* See options.h -- add any more there, too. */
 	static const struct option options[] = {
@@ -831,6 +855,9 @@ int zImage_arm_load(int argc, char **argv, const char *buf, off_t len,
 			printf("DTB: Using DTB appended to zImage\n");
 		}
 
+		dtb_model = dtb_get_model();
+		choose_res = choose_dtb(dtb_img, dtb_img_len, &dtb_buf, &dtb_length, dtb_model);
+		free(dtb_model);
 
 		choose_res = choose_dtb(dtb_img, dtb_img_len, &dtb_buf, &dtb_length, "M8 XF");
 		if(free_dtb_img)
